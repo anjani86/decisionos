@@ -533,4 +533,471 @@ A recommendation should not be presented as highly certain when its ranking is u
 
 # 15. Recommendation Service
 
-The Recommenda
+The Recommendation Service combines:
+
+* Eligibility
+* Weighted scores
+* Evidence
+* Confidence
+* Risk signals
+* Counter-evidence
+* Sensitivity analysis
+* Recommendation stability
+
+A recommendation should contain:
+
+```text
+Recommended Option
+
+Why it wins
+
+Key strengths
+
+Key weaknesses
+
+Supporting evidence
+
+Contradicting evidence
+
+Confidence
+
+Recommendation stability
+
+What could change the decision
+
+Recommended next action
+```
+
+The explanation must be traceable to underlying evidence and assessments.
+
+---
+
+# 16. Human Decision Layer
+
+DecisionOS does not automatically award business to a supplier.
+
+The workflow is:
+
+```text
+AI Analysis
+     ↓
+Recommendation
+     ↓
+Human Review
+     ↓
+Challenge
+     ↓
+Sensitivity Analysis
+     ↓
+Human Decision
+```
+
+The system records:
+
+* Selected option
+* Whether selection matches recommendation
+* Decision status
+* Human rationale
+* Human notes
+* Decision timestamp
+
+The human decision is authoritative.
+
+---
+
+# 17. Data Model
+
+The initial conceptual data model contains:
+
+```text
+Decision
+ ├── Requirements
+ ├── Constraints
+ ├── Criteria
+ ├── Sourcing Options
+ │     ├── Component
+ │     ├── Supplier
+ │     └── Commercial Data
+ │
+ ├── Evidence
+ │     ├── Sources
+ │     ├── Claims
+ │     └── Assessments
+ │
+ ├── Scores
+ ├── Risk Signals
+ ├── Recommendation
+ ├── Sensitivity Results
+ └── Human Decision
+```
+
+Primary entities:
+
+* Decision
+* Component
+* Supplier
+* SourcingOption
+* Requirement
+* Constraint
+* Criterion
+* Source
+* Evidence
+* Claim
+* Assessment
+* RiskSignal
+* Score
+* Recommendation
+* SensitivityResult
+* HumanDecision
+
+---
+
+# 18. Data Persistence
+
+PostgreSQL is the authoritative data store.
+
+Relational data should include:
+
+* Decisions
+* Components
+* Suppliers
+* Sourcing options
+* Requirements
+* Criteria
+* Constraints
+* Scores
+* Evidence metadata
+* Recommendations
+* Human decisions
+
+Vector embeddings may be stored for semantic retrieval.
+
+Vector search is an auxiliary capability and is not the authoritative decision mechanism.
+
+---
+
+# 19. API Boundary
+
+The initial API exposes product capabilities rather than implementation details.
+
+Conceptual endpoints:
+
+```text
+POST   /decisions
+GET    /decisions/{id}
+
+POST   /decisions/{id}/requirements
+POST   /decisions/{id}/constraints
+POST   /decisions/{id}/criteria
+
+POST   /decisions/{id}/options
+GET    /decisions/{id}/options
+
+POST   /decisions/{id}/research
+GET    /decisions/{id}/evidence
+
+POST   /decisions/{id}/evaluate
+GET    /decisions/{id}/scores
+
+POST   /decisions/{id}/recommendation
+POST   /decisions/{id}/challenge
+POST   /decisions/{id}/sensitivity
+
+POST   /decisions/{id}/human-decision
+```
+
+The exact API contract may evolve during implementation.
+
+---
+
+# 20. Research Data Flow
+
+```text
+Decision Requirements
+        ↓
+Research Questions
+        ↓
+Search / Retrieval
+        ↓
+Source Documents
+        ↓
+Relevant Passages
+        ↓
+Structured Claims
+        ↓
+Evidence Classification
+        ↓
+Criterion Assessment
+        ↓
+Decision Engine
+```
+
+The system should preserve enough information to reconstruct how an important claim was derived from its source.
+
+---
+
+# 21. Recommendation Data Flow
+
+```text
+Decision
+   ↓
+Candidate Options
+   ↓
+Hard Constraint Evaluation
+   ↓
+Evidence Assessment
+   ↓
+Criterion Scores
+   ↓
+Weighted Scoring
+   ↓
+Risk Analysis
+   ↓
+Counter-Evidence
+   ↓
+Sensitivity Analysis
+   ↓
+Recommendation Stability
+   ↓
+Recommendation
+   ↓
+Human Decision
+```
+
+---
+
+# 22. Evaluation Architecture
+
+The architecture must allow AI components to be evaluated independently from the user interface.
+
+## Retrieval Evaluation
+
+Measure:
+
+* Source relevance
+* Evidence retrieval accuracy
+* Citation correctness
+
+## Extraction Evaluation
+
+Measure:
+
+* Claim extraction accuracy
+* Criterion classification accuracy
+* Evidence classification accuracy
+
+## Decision Evaluation
+
+Measure:
+
+* Constraint correctness
+* Score correctness
+* Ranking correctness
+* Sensitivity correctness
+
+## Recommendation Evaluation
+
+Measure:
+
+* Evidence grounding
+* Explanation quality
+* Counter-evidence quality
+* Recommendation stability
+
+## Human Evaluation
+
+Measure:
+
+* Decision usefulness
+* Trust
+* Review effort
+* Ability to identify uncertainty
+* Ability to challenge the recommendation
+
+---
+
+# 23. Security and Data Protection
+
+The system must:
+
+* Keep API keys outside source control
+* Store secrets using environment-based configuration
+* Validate API inputs
+* Restrict access to decision data
+* Avoid exposing credentials through logs
+* Treat retrieved external content as untrusted input
+* Prevent external documents from directly controlling application behavior
+
+External research content must be treated as data, not executable instructions.
+
+---
+
+# 24. Observability
+
+Important system events should be observable.
+
+Examples:
+
+* Research request
+* Source retrieval
+* Evidence extraction
+* Evidence classification
+* Scoring execution
+* Recommendation generation
+* Counter-evidence search
+* Sensitivity calculation
+* Human decision
+
+The system should make it possible to diagnose why a recommendation was produced.
+
+---
+
+# 25. Failure Handling
+
+DecisionOS should fail conservatively.
+
+## Research Failure
+
+If external research cannot be retrieved:
+
+```text
+Evidence unavailable
+```
+
+The system should not invent replacement evidence.
+
+## Conflicting Evidence
+
+Surface the conflict and reduce confidence.
+
+## Missing Data
+
+Represent the value as unknown rather than guessing.
+
+## LLM Failure
+
+Preserve structured decision data and allow deterministic components to remain usable.
+
+## Scoring Failure
+
+Do not produce a recommendation from incomplete or invalid scoring inputs.
+
+---
+
+# 26. Architecture Principles
+
+### Principle 1 — Evidence Before Recommendation
+
+Recommendations must be grounded in evidence.
+
+### Principle 2 — Deterministic Decisions
+
+Numerical scoring and constraints must be reproducible.
+
+### Principle 3 — AI Assists, Software Governs
+
+LLMs interpret and analyze; application logic enforces decision rules.
+
+### Principle 4 — Uncertainty Is Data
+
+Missing and conflicting evidence must be represented explicitly.
+
+### Principle 5 — Challenge Is a First-Class Capability
+
+The system should actively test its own recommendation.
+
+### Principle 6 — Human Authority
+
+The AI recommendation never replaces the human procurement decision.
+
+### Principle 7 — Traceability
+
+Users should be able to move from recommendation back to the evidence supporting it.
+
+### Principle 8 — Evaluation Is Part of the Architecture
+
+AI components must be independently measurable.
+
+---
+
+# 27. Architecture Non-Goals
+
+The initial architecture does not attempt to provide:
+
+* ERP replacement
+* Procurement marketplace
+* Autonomous purchasing
+* Supplier contracting
+* Payment processing
+* Automated purchase orders
+* Full enterprise identity management
+* Complete BOM lifecycle management
+* Global real-time supply-chain simulation
+* Autonomous procurement agents
+
+The architecture remains focused on evidence-backed decision intelligence.
+
+---
+
+# 28. Target Architecture
+
+```text
+                    USER
+                     │
+                     ▼
+          ┌──────────────────────┐
+          │       Next.js        │
+          │    Decision UI       │
+          └──────────┬───────────┘
+                     │
+                     ▼
+          ┌──────────────────────┐
+          │       FastAPI        │
+          │      API Layer       │
+          └──────────┬───────────┘
+                     │
+        ┌────────────┼────────────┐
+        ▼            ▼            ▼
+ ┌────────────┐ ┌────────────┐ ┌────────────┐
+ │  Decision  │ │ Research & │ │ Evaluation │
+ │   Engine   │ │ Retrieval  │ │  Services  │
+ └─────┬──────┘ └──────┬─────┘ └────────────┘
+       │               │
+       │               ▼
+       │       ┌────────────────┐
+       │       │ Evidence Layer │
+       │       └───────┬────────┘
+       │               │
+       └───────┬───────┘
+               ▼
+      ┌────────────────────┐
+      │    PostgreSQL      │
+      │    + pgvector      │
+      └─────────┬──────────┘
+                │
+                ▼
+      External Data Sources
+
+              AI Layer
+                 │
+       ┌─────────┴─────────┐
+       ▼                   ▼
+ LLM Interpretation   Semantic Retrieval
+       │                   │
+       └─────────┬─────────┘
+                 ▼
+           Evidence Layer
+                 │
+                 ▼
+          Human Decision
+```
+
+---
+
+# 29. Architectural Principle
+
+The defining architecture of DecisionOS is:
+
+> **Research produces evidence. Evidence informs assessments. Assessments feed deterministic decision logic. AI explains and challenges the result. Humans make the final decision.**
+
+This separation is fundamental to making DecisionOS explainable, reproducible, evaluable, and trustworthy.
