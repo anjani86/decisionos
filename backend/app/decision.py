@@ -7,29 +7,106 @@ class CriterionScore(BaseModel):
     score: float = Field(ge=0.0, le=100.0)
 
 
+class HardConstraints(BaseModel):
+    max_lead_time_weeks: float | None = None
+    max_price: float | None = None
+    rohs_required: bool = False
+    lifecycle_required: str | None = None
+
+
 class DecisionRequest(BaseModel):
     option_name: str
+
     criteria: list[CriterionScore]
+
+    # Actual option values
+    lead_time_weeks: float | None = None
+    price: float | None = None
+    rohs_compliant: bool | None = None
+    lifecycle_status: str | None = None
+
+    # Decision requirements
+    hard_constraints: HardConstraints = HardConstraints()
 
 
 class DecisionResponse(BaseModel):
     option_name: str
+    eligibility: str
     overall_score: float
     recommendation: str
+    failed_constraints: list[str]
 
 
-def calculate_decision(request: DecisionRequest) -> DecisionResponse:
-    total_weight = sum(criterion.weight for criterion in request.criteria)
+def check_hard_constraints(request: DecisionRequest) -> list[str]:
+    failed_constraints = []
+    constraints = request.hard_constraints
+
+    if (
+        constraints.max_lead_time_weeks is not None
+        and request.lead_time_weeks is not None
+        and request.lead_time_weeks > constraints.max_lead_time_weeks
+    ):
+        failed_constraints.append(
+            f"Lead time exceeds maximum of "
+            f"{constraints.max_lead_time_weeks} weeks."
+        )
+
+    if (
+        constraints.max_price is not None
+        and request.price is not None
+        and request.price > constraints.max_price
+    ):
+        failed_constraints.append(
+            f"Price exceeds maximum of ${constraints.max_price}."
+        )
+
+    if constraints.rohs_required and request.rohs_compliant is not True:
+        failed_constraints.append("RoHS compliance is required.")
+
+    if (
+        constraints.lifecycle_required is not None
+        and request.lifecycle_status != constraints.lifecycle_required
+    ):
+        failed_constraints.append(
+            f"Lifecycle status must be "
+            f"'{constraints.lifecycle_required}'."
+        )
+
+    return failed_constraints
+
+
+def calculate_weighted_score(request: DecisionRequest) -> float:
+    total_weight = sum(
+        criterion.weight for criterion in request.criteria
+    )
 
     if total_weight == 0:
-        raise ValueError("Total criterion weight must be greater than zero.")
+        raise ValueError(
+            "Total criterion weight must be greater than zero."
+        )
 
     weighted_score = sum(
         criterion.score * criterion.weight
         for criterion in request.criteria
     )
 
-    overall_score = weighted_score / total_weight
+    return weighted_score / total_weight
+
+
+def calculate_decision(request: DecisionRequest) -> DecisionResponse:
+    failed_constraints = check_hard_constraints(request)
+
+    # Hard constraint failures make an option ineligible.
+    if failed_constraints:
+        return DecisionResponse(
+            option_name=request.option_name,
+            eligibility="ineligible",
+            overall_score=0.0,
+            recommendation="not_recommended",
+            failed_constraints=failed_constraints,
+        )
+
+    overall_score = calculate_weighted_score(request)
 
     if overall_score >= 80:
         recommendation = "recommended"
@@ -40,6 +117,8 @@ def calculate_decision(request: DecisionRequest) -> DecisionResponse:
 
     return DecisionResponse(
         option_name=request.option_name,
+        eligibility="eligible",
         overall_score=round(overall_score, 2),
         recommendation=recommendation,
+        failed_constraints=[],
     )
