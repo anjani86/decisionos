@@ -135,3 +135,32 @@ def test_multiple_constraint_failures_are_reported():
     assert result.eligibility == "ineligible"
     assert result.overall_score == 0
     assert len(result.failed_constraints) == 4
+
+def test_decision_includes_criterion_explanations():
+    request = DecisionRequest(
+        option_name="Supplier G",
+        criteria=sample_criteria(),
+        lead_time_weeks=8,
+        price=2.0,
+        rohs_compliant=True,
+        lifecycle_status="active",
+        hard_constraints=sample_constraints(),
+    )
+
+    result = calculate_decision(request)
+
+    assert len(result.criteria) == 7
+
+    first = result.criteria[0]
+
+    assert first.name == "Technical Fit"
+    assert first.weight == 0.25
+    assert first.score == 95
+    assert first.weighted_contribution == 23.75
+
+    total_contribution = sum(
+        criterion.weighted_contribution
+        for criterion in result.criteria
+    )
+
+    assert total_contribution == 95

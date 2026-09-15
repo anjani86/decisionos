@@ -7,6 +7,13 @@ class CriterionScore(BaseModel):
     score: float = Field(ge=0.0, le=100.0)
 
 
+class CriterionResult(BaseModel):
+    name: str
+    weight: float
+    score: float
+    weighted_contribution: float
+
+
 class HardConstraints(BaseModel):
     max_lead_time_weeks: float | None = None
     max_price: float | None = None
@@ -16,16 +23,13 @@ class HardConstraints(BaseModel):
 
 class DecisionRequest(BaseModel):
     option_name: str
-
     criteria: list[CriterionScore]
 
-    # Actual option values
     lead_time_weeks: float | None = None
     price: float | None = None
     rohs_compliant: bool | None = None
     lifecycle_status: str | None = None
 
-    # Decision requirements
     hard_constraints: HardConstraints = HardConstraints()
 
 
@@ -34,6 +38,7 @@ class DecisionResponse(BaseModel):
     eligibility: str
     overall_score: float
     recommendation: str
+    criteria: list[CriterionResult]
     failed_constraints: list[str]
 
 
@@ -75,6 +80,23 @@ def check_hard_constraints(request: DecisionRequest) -> list[str]:
     return failed_constraints
 
 
+def calculate_criterion_results(
+    request: DecisionRequest,
+) -> list[CriterionResult]:
+    return [
+        CriterionResult(
+            name=criterion.name,
+            weight=criterion.weight,
+            score=criterion.score,
+            weighted_contribution=round(
+                criterion.score * criterion.weight,
+                2,
+            ),
+        )
+        for criterion in request.criteria
+    ]
+
+
 def calculate_weighted_score(request: DecisionRequest) -> float:
     total_weight = sum(
         criterion.weight for criterion in request.criteria
@@ -95,14 +117,15 @@ def calculate_weighted_score(request: DecisionRequest) -> float:
 
 def calculate_decision(request: DecisionRequest) -> DecisionResponse:
     failed_constraints = check_hard_constraints(request)
+    criterion_results = calculate_criterion_results(request)
 
-    # Hard constraint failures make an option ineligible.
     if failed_constraints:
         return DecisionResponse(
             option_name=request.option_name,
             eligibility="ineligible",
             overall_score=0.0,
             recommendation="not_recommended",
+            criteria=criterion_results,
             failed_constraints=failed_constraints,
         )
 
@@ -120,5 +143,6 @@ def calculate_decision(request: DecisionRequest) -> DecisionResponse:
         eligibility="eligible",
         overall_score=round(overall_score, 2),
         recommendation=recommendation,
+        criteria=criterion_results,
         failed_constraints=[],
     )
