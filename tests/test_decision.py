@@ -190,3 +190,43 @@ def test_criterion_assessment_contains_evidence():
     assert len(assessment.evidence) == 1
     assert assessment.evidence[0].source_name == "STMicroelectronics"
     assert assessment.evidence[0].confidence == 0.95    
+
+def test_criterion_assessment_supports_counter_evidence():
+    supporting_evidence = Evidence(
+        source_name="STMicroelectronics",
+        source_url="https://www.st.com/",
+        claim="STM32F407VGT6 is an active product",
+        evidence_type="supporting",
+        confidence=0.95,
+    )
+
+    counter_evidence = Evidence(
+        source_name="Distributor",
+        source_url="https://example.com/",
+        claim="Availability is currently limited",
+        evidence_type="contradicting",
+        confidence=0.80,
+    )
+
+    assessment = CriterionAssessment(
+        criterion_name="Lifecycle",
+        assessment="The component appears to be active, but availability signals require review.",
+        score=85,
+        evidence=[supporting_evidence],
+        counter_evidence=[counter_evidence],
+    )
+
+    assert len(assessment.evidence) == 1
+    assert len(assessment.counter_evidence) == 1
+
+    assert (
+        assessment.counter_evidence[0].evidence_type
+        == "contradicting"
+    )
+
+    assert (
+        assessment.counter_evidence[0].claim
+        == "Availability is currently limited"
+    )
+
+    assert assessment.score == 85    

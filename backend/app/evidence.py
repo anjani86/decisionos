@@ -21,3 +21,4 @@ class CriterionAssessment(BaseModel):
     assessment: str
     score: float = Field(ge=0.0, le=100.0)
     evidence: list[Evidence]
+    counter_evidence: list[Evidence] = []
