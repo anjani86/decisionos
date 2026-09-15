@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from app.evidence import Evidence
+from app.evidence import CriterionAssessment, Evidence
 from app.decision import DecisionRequest, DecisionResponse, calculate_decision
 
 from app.research import ResearchRequest, ResearchResponse, research
@@ -39,3 +39,7 @@ def create_evidence(evidence: Evidence):
 @app.post("/decision", response_model=DecisionResponse)
 def decision_endpoint(request: DecisionRequest):
     return calculate_decision(request)
+
+@app.post("/assessment", response_model=CriterionAssessment)
+def create_assessment(assessment: CriterionAssessment):
+    return assessment

@@ -14,3 +14,10 @@ class Evidence(BaseModel):
         "missing",
     ]
     confidence: float = Field(ge=0.0, le=1.0)
+
+
+class CriterionAssessment(BaseModel):
+    criterion_name: str
+    assessment: str
+    score: float = Field(ge=0.0, le=100.0)
+    evidence: list[Evidence]

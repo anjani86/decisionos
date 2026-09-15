@@ -1,3 +1,4 @@
+from app.evidence import CriterionAssessment, Evidence
 from app.decision import (
     CriterionScore,
     DecisionRequest,
@@ -164,3 +165,28 @@ def test_decision_includes_criterion_explanations():
     )
 
     assert total_contribution == 95
+
+def test_criterion_assessment_contains_evidence():
+    evidence = Evidence(
+        source_name="STMicroelectronics",
+        source_url="https://www.st.com/",
+        claim="STM32F407VGT6 is an active product",
+        evidence_type="supporting",
+        confidence=0.95,
+    )
+
+    assessment = CriterionAssessment(
+        criterion_name="Lifecycle",
+        assessment=(
+            "The component is currently listed as an active "
+            "product by the manufacturer."
+        ),
+        score=95,
+        evidence=[evidence],
+    )
+
+    assert assessment.criterion_name == "Lifecycle"
+    assert assessment.score == 95
+    assert len(assessment.evidence) == 1
+    assert assessment.evidence[0].source_name == "STMicroelectronics"
+    assert assessment.evidence[0].confidence == 0.95    
