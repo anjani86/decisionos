@@ -1,4 +1,3 @@
-```python
 from pydantic import BaseModel
 
 
@@ -18,5 +17,3 @@ def research(request: ResearchRequest) -> ResearchResponse:
         status="not_implemented",
         message="Research engine not implemented yet.",
     )
-```
-
