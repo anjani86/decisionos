@@ -1,7 +1,13 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from app.evidence import CriterionAssessment, Evidence
-from app.decision import DecisionRequest, DecisionResponse, calculate_decision
+from app.decision import (
+    DecisionRequest,
+    DecisionResponse,
+    SensitivityResult,
+    calculate_decision,
+    calculate_sensitivity,
+)
 
 from app.research import ResearchRequest, ResearchResponse, research
 
@@ -43,3 +49,15 @@ def decision_endpoint(request: DecisionRequest):
 @app.post("/assessment", response_model=CriterionAssessment)
 def create_assessment(assessment: CriterionAssessment):
     return assessment
+
+@app.post("/sensitivity", response_model=SensitivityResult)
+def sensitivity_endpoint(
+    request: DecisionRequest,
+    criterion_name: str,
+    changed_score: float,
+):
+    return calculate_sensitivity(
+        request,
+        criterion_name,
+        changed_score,
+    )

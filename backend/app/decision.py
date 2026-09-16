@@ -41,6 +41,13 @@ class DecisionResponse(BaseModel):
     criteria: list[CriterionResult]
     failed_constraints: list[str]
 
+class SensitivityResult(BaseModel):
+    parameter: str
+    original_value: float
+    changed_value: float
+    original_score: float
+    changed_score: float
+    recommendation_changed: bool
 
 def check_hard_constraints(request: DecisionRequest) -> list[str]:
     failed_constraints = []
@@ -145,4 +152,70 @@ def calculate_decision(request: DecisionRequest) -> DecisionResponse:
         recommendation=recommendation,
         criteria=criterion_results,
         failed_constraints=[],
+    )
+
+def calculate_sensitivity(
+    request: DecisionRequest,
+    criterion_name: str,
+    changed_score: float,
+) -> SensitivityResult:
+    original_score = calculate_weighted_score(request)
+
+    modified_criteria = []
+
+    for criterion in request.criteria:
+        if criterion.name == criterion_name:
+            modified_criteria.append(
+                CriterionScore(
+                    name=criterion.name,
+                    weight=criterion.weight,
+                    score=changed_score,
+                )
+            )
+        else:
+            modified_criteria.append(criterion)
+
+    modified_request = DecisionRequest(
+        option_name=request.option_name,
+        criteria=modified_criteria,
+        lead_time_weeks=request.lead_time_weeks,
+        price=request.price,
+        rohs_compliant=request.rohs_compliant,
+        lifecycle_status=request.lifecycle_status,
+        hard_constraints=request.hard_constraints,
+    )
+
+    new_score = calculate_weighted_score(modified_request)
+
+    original_recommendation = (
+        "recommended"
+        if original_score >= 80
+        else "acceptable"
+        if original_score >= 60
+        else "not_recommended"
+    )
+
+    changed_recommendation = (
+        "recommended"
+        if new_score >= 80
+        else "acceptable"
+        if new_score >= 60
+        else "not_recommended"
+    )
+
+    original_value = next(
+        criterion.score
+        for criterion in request.criteria
+        if criterion.name == criterion_name
+    )
+
+    return SensitivityResult(
+        parameter=criterion_name,
+        original_value=original_value,
+        changed_value=changed_score,
+        original_score=round(original_score, 2),
+        changed_score=round(new_score, 2),
+        recommendation_changed=(
+            original_recommendation != changed_recommendation
+        ),
     )

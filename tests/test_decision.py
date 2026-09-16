@@ -4,6 +4,7 @@ from app.decision import (
     DecisionRequest,
     HardConstraints,
     calculate_decision,
+    calculate_sensitivity,
 )
 
 
@@ -230,3 +231,51 @@ def test_criterion_assessment_supports_counter_evidence():
     )
 
     assert assessment.score == 85    
+
+def test_sensitivity_analysis_detects_score_change():
+    request = DecisionRequest(
+        option_name="Supplier H",
+        criteria=sample_criteria(),
+        lead_time_weeks=8,
+        price=2.0,
+        rohs_compliant=True,
+        lifecycle_status="active",
+        hard_constraints=sample_constraints(),
+    )
+
+    result = calculate_sensitivity(
+        request,
+        criterion_name="Technical Fit",
+        changed_score=60,
+    )
+
+    assert result.parameter == "Technical Fit"
+    assert result.original_value == 95
+    assert result.changed_value == 60
+    assert result.original_score == 95
+    assert result.changed_score == 86.25
+    assert result.recommendation_changed is False
+
+def test_sensitivity_analysis_detects_recommendation_change():
+    request = DecisionRequest(
+        option_name="Supplier I",
+        criteria=sample_criteria(),
+        lead_time_weeks=8,
+        price=2.0,
+        rohs_compliant=True,
+        lifecycle_status="active",
+        hard_constraints=sample_constraints(),
+    )
+
+    result = calculate_sensitivity(
+        request,
+        criterion_name="Technical Fit",
+        changed_score=0,
+    )
+
+    assert result.parameter == "Technical Fit"
+    assert result.original_value == 95
+    assert result.changed_value == 0
+    assert result.original_score == 95
+    assert result.changed_score == 71.25
+    assert result.recommendation_changed is True    
