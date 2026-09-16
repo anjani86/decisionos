@@ -49,6 +49,13 @@ class SensitivityResult(BaseModel):
     changed_score: float
     recommendation_changed: bool
 
+class StabilityResult(BaseModel):
+    parameter: str
+    original_value: float
+    original_recommendation: str
+    threshold_value: float | None
+    recommendation_changed: bool    
+
 def check_hard_constraints(request: DecisionRequest) -> list[str]:
     failed_constraints = []
     constraints = request.hard_constraints
@@ -121,6 +128,69 @@ def calculate_weighted_score(request: DecisionRequest) -> float:
 
     return weighted_score / total_weight
 
+def calculate_stability(
+    request: DecisionRequest,
+    criterion_name: str,
+    minimum_score: float = 0,
+    step: float = 5,
+) -> StabilityResult:
+    original_score = calculate_weighted_score(request)
+    original_recommendation = classify_recommendation(original_score)
+
+    original_value = next(
+        criterion.score
+        for criterion in request.criteria
+        if criterion.name == criterion_name
+    )
+
+    current_score = original_value - step
+
+    while current_score >= minimum_score:
+        modified_criteria = []
+
+        for criterion in request.criteria:
+            if criterion.name == criterion_name:
+                modified_criteria.append(
+                    CriterionScore(
+                        name=criterion.name,
+                        weight=criterion.weight,
+                        score=current_score,
+                    )
+                )
+            else:
+                modified_criteria.append(criterion)
+
+        modified_request = DecisionRequest(
+            option_name=request.option_name,
+            criteria=modified_criteria,
+            lead_time_weeks=request.lead_time_weeks,
+            price=request.price,
+            rohs_compliant=request.rohs_compliant,
+            lifecycle_status=request.lifecycle_status,
+            hard_constraints=request.hard_constraints,
+        )
+
+        new_score = calculate_weighted_score(modified_request)
+        new_recommendation = classify_recommendation(new_score)
+
+        if new_recommendation != original_recommendation:
+            return StabilityResult(
+                parameter=criterion_name,
+                original_value=original_value,
+                original_recommendation=original_recommendation,
+                threshold_value=current_score,
+                recommendation_changed=True,
+            )
+
+        current_score -= step
+
+    return StabilityResult(
+        parameter=criterion_name,
+        original_value=original_value,
+        original_recommendation=original_recommendation,
+        threshold_value=None,
+        recommendation_changed=False,
+    )
 
 def calculate_decision(request: DecisionRequest) -> DecisionResponse:
     failed_constraints = check_hard_constraints(request)
@@ -153,6 +223,12 @@ def calculate_decision(request: DecisionRequest) -> DecisionResponse:
         criteria=criterion_results,
         failed_constraints=[],
     )
+def classify_recommendation(score: float) -> str:
+    if score >= 80:
+        return "recommended"
+    if score >= 60:
+        return "acceptable"
+    return "not_recommended"
 
 def calculate_sensitivity(
     request: DecisionRequest,
@@ -187,21 +263,8 @@ def calculate_sensitivity(
 
     new_score = calculate_weighted_score(modified_request)
 
-    original_recommendation = (
-        "recommended"
-        if original_score >= 80
-        else "acceptable"
-        if original_score >= 60
-        else "not_recommended"
-    )
-
-    changed_recommendation = (
-        "recommended"
-        if new_score >= 80
-        else "acceptable"
-        if new_score >= 60
-        else "not_recommended"
-    )
+    original_recommendation = classify_recommendation(original_score)
+    changed_recommendation = classify_recommendation(new_score)
 
     original_value = next(
         criterion.score

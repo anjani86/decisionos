@@ -5,8 +5,10 @@ from app.decision import (
     DecisionRequest,
     DecisionResponse,
     SensitivityResult,
+    StabilityResult,
     calculate_decision,
     calculate_sensitivity,
+    calculate_stability,
 )
 
 from app.research import ResearchRequest, ResearchResponse, research
@@ -60,4 +62,18 @@ def sensitivity_endpoint(
         request,
         criterion_name,
         changed_score,
+    )
+
+@app.post("/stability", response_model=StabilityResult)
+def stability_endpoint(
+    request: DecisionRequest,
+    criterion_name: str,
+    minimum_score: float = 0,
+    step: float = 5,
+):
+    return calculate_stability(
+        request,
+        criterion_name,
+        minimum_score,
+        step,
     )

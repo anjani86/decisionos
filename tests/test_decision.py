@@ -5,6 +5,7 @@ from app.decision import (
     HardConstraints,
     calculate_decision,
     calculate_sensitivity,
+    calculate_stability,
 )
 
 
@@ -278,4 +279,28 @@ def test_sensitivity_analysis_detects_recommendation_change():
     assert result.changed_value == 0
     assert result.original_score == 95
     assert result.changed_score == 71.25
-    assert result.recommendation_changed is True    
+    assert result.recommendation_changed is True 
+
+def test_recommendation_stability_detects_threshold():
+    request = DecisionRequest(
+        option_name="Supplier J",
+        criteria=sample_criteria(),
+        lead_time_weeks=8,
+        price=2.0,
+        rohs_compliant=True,
+        lifecycle_status="active",
+        hard_constraints=sample_constraints(),
+    )
+
+    result = calculate_stability(
+        request,
+        criterion_name="Technical Fit",
+        minimum_score=0,
+        step=5,
+    )
+
+    assert result.parameter == "Technical Fit"
+    assert result.original_value == 95
+    assert result.original_recommendation == "recommended"
+    assert result.threshold_value == 30
+    assert result.recommendation_changed is True       
