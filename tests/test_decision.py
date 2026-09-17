@@ -8,6 +8,10 @@ from app.decision import (
     calculate_sensitivity,
     calculate_stability,
     calculate_comparison,
+    criterion_score_from_assessment,
+    CriterionScore,
+    DecisionRequest,
+    build_decision_request,
 )
 
 
@@ -379,4 +383,119 @@ def test_comparison_evaluates_multiple_suppliers():
     assert (
         "Lead time exceeds maximum of 12.0 weeks."
         in result.options[2].failed_constraints
-    )    
+    )  
+
+def test_criterion_assessment_can_become_criterion_score():
+    assessment = CriterionAssessment(
+        criterion_name="Technical Fit",
+        assessment="The supplier meets the technical requirements.",
+        score=90,
+        evidence=[],
+    )
+
+    result = criterion_score_from_assessment(
+        assessment,
+        weight=0.25,
+    )
+
+    assert result.name == "Technical Fit"
+    assert result.weight == 0.25
+    assert result.score == 90      
+
+def test_assessments_can_build_decision_request():
+    assessments = [
+        CriterionAssessment(
+            criterion_name="Technical Fit",
+            assessment="The supplier meets the technical requirements.",
+            score=90,
+            evidence=[],
+        ),
+        CriterionAssessment(
+            criterion_name="Availability",
+            assessment="The supplier has good availability.",
+            score=80,
+            evidence=[],
+        ),
+    ]
+
+    request = build_decision_request(
+        option_name="Supplier A",
+        assessments=assessments,
+        weights={
+            "Technical Fit": 0.6,
+            "Availability": 0.4,
+        },
+    )
+
+    assert request.option_name == "Supplier A"
+    assert len(request.criteria) == 2
+
+    assert request.criteria[0].name == "Technical Fit"
+    assert request.criteria[0].weight == 0.6
+    assert request.criteria[0].score == 90
+
+    assert request.criteria[1].name == "Availability"
+    assert request.criteria[1].weight == 0.4
+    assert request.criteria[1].score == 80    
+
+def test_assessments_can_produce_decision():
+    assessments = [
+        CriterionAssessment(
+            criterion_name="Technical Fit",
+            assessment="The supplier strongly meets technical requirements.",
+            score=95,
+            evidence=[],
+        ),
+        CriterionAssessment(
+            criterion_name="Availability",
+            assessment="The supplier has strong availability.",
+            score=85,
+            evidence=[],
+        ),
+    ]
+
+    request = build_decision_request(
+        option_name="Supplier A",
+        assessments=assessments,
+        weights={
+            "Technical Fit": 0.6,
+            "Availability": 0.4,
+        },
+    )
+
+    result = calculate_decision(request)
+
+    assert result.option_name == "Supplier A"
+    assert result.eligibility == "eligible"
+    assert result.overall_score == 91
+    assert result.recommendation == "recommended"
+    assessments = [
+        CriterionAssessment(
+            criterion_name="Technical Fit",
+            assessment="The supplier strongly meets technical requirements.",
+            score=95,
+            evidence=[],
+        ),
+        CriterionAssessment(
+            criterion_name="Availability",
+            assessment="The supplier has strong availability.",
+            score=85,
+            evidence=[],
+        ),
+    ]
+
+    request = build_decision_request(
+        option_name="Supplier A",
+        assessments=assessments,
+        weights={
+            "Technical Fit": 0.6,
+            "Availability": 0.4,
+        },
+    )
+
+    result = calculate_decision(request)
+
+    assert result.option_name == "Supplier A"
+    assert result.eligibility == "eligible"
+    assert result.overall_score == 91
+    assert result.recommendation == "recommended"   

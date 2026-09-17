@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from app.evidence import CriterionAssessment
 
 
 class CriterionScore(BaseModel):
@@ -301,4 +302,42 @@ def calculate_sensitivity(
         recommendation_changed=(
             original_recommendation != changed_recommendation
         ),
+    )
+
+def criterion_score_from_assessment(
+    assessment: CriterionAssessment,
+    weight: float,
+) -> CriterionScore:
+    return CriterionScore(
+        name=assessment.criterion_name,
+        weight=weight,
+        score=assessment.score,
+    )
+
+def build_decision_request(
+    option_name: str,
+    assessments: list[CriterionAssessment],
+    weights: dict[str, float],
+    lead_time_weeks: float | None = None,
+    price: float | None = None,
+    rohs_compliant: bool | None = None,
+    lifecycle_status: str | None = None,
+    hard_constraints: HardConstraints | None = None,
+) -> DecisionRequest:
+    criteria = [
+        criterion_score_from_assessment(
+            assessment,
+            weights[assessment.criterion_name],
+        )
+        for assessment in assessments
+    ]
+
+    return DecisionRequest(
+        option_name=option_name,
+        criteria=criteria,
+        lead_time_weeks=lead_time_weeks,
+        price=price,
+        rohs_compliant=rohs_compliant,
+        lifecycle_status=lifecycle_status,
+        hard_constraints=hard_constraints or HardConstraints(),
     )
