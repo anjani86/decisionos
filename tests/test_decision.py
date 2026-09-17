@@ -3,9 +3,11 @@ from app.decision import (
     CriterionScore,
     DecisionRequest,
     HardConstraints,
+    ComparisonRequest,
     calculate_decision,
     calculate_sensitivity,
     calculate_stability,
+    calculate_comparison,
 )
 
 
@@ -304,3 +306,77 @@ def test_recommendation_stability_detects_threshold():
     assert result.original_recommendation == "recommended"
     assert result.threshold_value == 30
     assert result.recommendation_changed is True       
+
+def test_comparison_evaluates_multiple_suppliers():
+    supplier_a = DecisionRequest(
+        option_name="Supplier A",
+        criteria=sample_criteria(),
+        lead_time_weeks=8,
+        price=2.0,
+        rohs_compliant=True,
+        lifecycle_status="active",
+        hard_constraints=sample_constraints(),
+    )
+
+    supplier_b = DecisionRequest(
+        option_name="Supplier B",
+        criteria=[
+            CriterionScore(name="Technical Fit", weight=0.25, score=90),
+            CriterionScore(name="Availability", weight=0.20, score=85),
+            CriterionScore(name="Lead Time", weight=0.15, score=80),
+            CriterionScore(name="Price", weight=0.15, score=90),
+            CriterionScore(name="Lifecycle", weight=0.10, score=95),
+            CriterionScore(name="Supply Risk", weight=0.10, score=85),
+            CriterionScore(name="Geographic Risk", weight=0.05, score=90),
+        ],
+        lead_time_weeks=10,
+        price=2.2,
+        rohs_compliant=True,
+        lifecycle_status="active",
+        hard_constraints=sample_constraints(),
+    )
+
+    supplier_c = DecisionRequest(
+        option_name="Supplier C",
+        criteria=[
+            CriterionScore(name="Technical Fit", weight=0.25, score=95),
+            CriterionScore(name="Availability", weight=0.20, score=90),
+            CriterionScore(name="Lead Time", weight=0.15, score=85),
+            CriterionScore(name="Price", weight=0.15, score=80),
+            CriterionScore(name="Lifecycle", weight=0.10, score=90),
+            CriterionScore(name="Supply Risk", weight=0.10, score=80),
+            CriterionScore(name="Geographic Risk", weight=0.05, score=85),
+        ],
+        lead_time_weeks=13,
+        price=2.1,
+        rohs_compliant=True,
+        lifecycle_status="active",
+        hard_constraints=sample_constraints(),
+    )
+
+    request = ComparisonRequest(
+        options=[supplier_a, supplier_b, supplier_c]
+    )
+
+    result = calculate_comparison(request)
+
+    assert len(result.options) == 3
+
+    assert result.options[0].option_name == "Supplier A"
+    assert result.options[0].eligibility == "eligible"
+    assert result.options[0].overall_score == 95
+    assert result.options[0].recommendation == "recommended"
+
+    assert result.options[1].option_name == "Supplier B"
+    assert result.options[1].eligibility == "eligible"
+    assert result.options[1].overall_score == 87.5
+    assert result.options[1].recommendation == "recommended"
+
+    assert result.options[2].option_name == "Supplier C"
+    assert result.options[2].eligibility == "ineligible"
+    assert result.options[2].overall_score == 0
+    assert result.options[2].recommendation == "not_recommended"
+    assert (
+        "Lead time exceeds maximum of 12.0 weeks."
+        in result.options[2].failed_constraints
+    )    

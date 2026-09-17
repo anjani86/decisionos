@@ -2,10 +2,13 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from app.evidence import CriterionAssessment, Evidence
 from app.decision import (
+    ComparisonRequest,
+    ComparisonResult,
     DecisionRequest,
     DecisionResponse,
     SensitivityResult,
     StabilityResult,
+    calculate_comparison,
     calculate_decision,
     calculate_sensitivity,
     calculate_stability,
@@ -77,3 +80,9 @@ def stability_endpoint(
         minimum_score,
         step,
     )
+
+@app.post("/comparison", response_model=ComparisonResult)
+def comparison_endpoint(
+    request: ComparisonRequest,
+):
+    return calculate_comparison(request)

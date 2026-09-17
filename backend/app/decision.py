@@ -41,6 +41,13 @@ class DecisionResponse(BaseModel):
     criteria: list[CriterionResult]
     failed_constraints: list[str]
 
+class ComparisonRequest(BaseModel):
+    options: list[DecisionRequest]
+
+
+class ComparisonResult(BaseModel):
+    options: list[DecisionResponse]   
+
 class SensitivityResult(BaseModel):
     parameter: str
     original_value: float
@@ -223,6 +230,19 @@ def calculate_decision(request: DecisionRequest) -> DecisionResponse:
         criteria=criterion_results,
         failed_constraints=[],
     )
+
+def calculate_comparison(
+    request: ComparisonRequest,
+) -> ComparisonResult:
+    decisions = [
+        calculate_decision(option)
+        for option in request.options
+    ]
+
+    return ComparisonResult(
+        options=decisions,
+    )
+
 def classify_recommendation(score: float) -> str:
     if score >= 80:
         return "recommended"
