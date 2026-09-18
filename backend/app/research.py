@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from app.evidence import Evidence
+
 
 class ResearchRequest(BaseModel):
     question: str
@@ -8,12 +10,12 @@ class ResearchRequest(BaseModel):
 class ResearchResponse(BaseModel):
     question: str
     status: str
-    message: str
+    findings: list[Evidence]
 
 
 def research(request: ResearchRequest) -> ResearchResponse:
     return ResearchResponse(
         question=request.question,
-        status="not_implemented",
-        message="Research engine not implemented yet.",
+        status="ready",
+        findings=[],
     )
