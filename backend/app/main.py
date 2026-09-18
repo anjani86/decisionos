@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from typing import Literal
 from pydantic import BaseModel
 from app.evidence import CriterionAssessment, Evidence, create_criterion_assessment
 from app.decision import (
@@ -14,7 +15,13 @@ from app.decision import (
     calculate_stability,
 )
 
-from app.research import ResearchRequest, ResearchResponse, research
+from app.research import (
+    ResearchRequest,
+    ResearchResponse,
+    ResearchSource,
+    create_evidence_from_source,
+    research,
+)
 
 
 app = FastAPI(
@@ -29,6 +36,26 @@ class HealthResponse(BaseModel):
     service: str
     version: str
 
+class SourceEvidenceRequest(BaseModel):
+    source: ResearchSource
+    claim: str
+    evidence_type: Literal[
+        "supporting",
+        "contradicting",
+        "neutral",
+        "missing",
+    ]
+    confidence: float
+
+
+@app.post("/source/evidence", response_model=Evidence)
+def source_evidence_endpoint(request: SourceEvidenceRequest):
+    return create_evidence_from_source(
+        source=request.source,
+        claim=request.claim,
+        evidence_type=request.evidence_type,
+        confidence=request.confidence,
+    )
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
