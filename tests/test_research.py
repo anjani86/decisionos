@@ -7,8 +7,9 @@ from app.research import (
     create_evidence_from_source,
     research,
     retrieve_source,
+    retrieve_url,
 )
-
+from unittest.mock import patch
 
 def test_research_returns_ready_response():
     request = ResearchRequest(
@@ -93,3 +94,26 @@ def test_retrieve_source_returns_research_source():
     assert source.source_url == "https://www.st.com/"
     assert source.source_type == "official_product_page"
     assert source.content == "STM32F407VGT6 is an active product."
+
+def test_retrieve_url_returns_research_source():
+    mock_response = type(
+        "MockResponse",
+        (),
+        {
+            "read": lambda self: b"STM32F407VGT6 is an active product.",
+            "__enter__": lambda self: self,
+            "__exit__": lambda self, exc_type, exc_value, traceback: None,
+        },
+    )()
+
+    with patch("app.research.urlopen", return_value=mock_response):
+        source = retrieve_url(
+            source_name="STMicroelectronics",
+            source_url="https://www.st.com/",
+            source_type="official_product_page",
+        )
+
+    assert source.source_name == "STMicroelectronics"
+    assert source.source_url == "https://www.st.com/"
+    assert source.source_type == "official_product_page"
+    assert source.content == "STM32F407VGT6 is an active product." 

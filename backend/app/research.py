@@ -1,9 +1,9 @@
 from typing import Literal
+from urllib.request import Request, urlopen
 
 from pydantic import BaseModel, Field
 
 from app.evidence import Evidence
-
 
 class ResearchSource(BaseModel):
     source_name: str
@@ -39,6 +39,29 @@ def retrieve_source(
         content=request.content,
         source_type=request.source_type,
     )
+
+
+def retrieve_url(
+    source_name: str,
+    source_url: str,
+    source_type: str,
+    timeout: float = 10.0,
+) -> ResearchSource:
+    request = Request(
+        source_url,
+        headers={"User-Agent": "DecisionOS/0.1"},
+    )
+
+    with urlopen(request, timeout=timeout) as response:
+        content = response.read().decode("utf-8")
+
+    return ResearchSource(
+        source_name=source_name,
+        source_url=source_url,
+        content=content,
+        source_type=source_type,
+    )
+
 
 def research(request: ResearchRequest) -> ResearchResponse:
     return ResearchResponse(
