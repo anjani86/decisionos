@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from app.evidence import CriterionAssessment, Evidence
+from app.evidence import CriterionAssessment, Evidence, create_criterion_assessment
 from app.decision import (
     ComparisonRequest,
     ComparisonResult,
@@ -51,9 +51,23 @@ def create_evidence(evidence: Evidence):
 def decision_endpoint(request: DecisionRequest):
     return calculate_decision(request)
 
+class AssessmentRequest(BaseModel):
+    criterion_name: str
+    assessment: str
+    score: float
+    evidence: list[Evidence]
+    counter_evidence: list[Evidence] = []
+
+
 @app.post("/assessment", response_model=CriterionAssessment)
-def create_assessment(assessment: CriterionAssessment):
-    return assessment
+def create_assessment(request: AssessmentRequest):
+    return create_criterion_assessment(
+        criterion_name=request.criterion_name,
+        assessment=request.assessment,
+        score=request.score,
+        evidence=request.evidence,
+        counter_evidence=request.counter_evidence,
+    )
 
 @app.post("/sensitivity", response_model=SensitivityResult)
 def sensitivity_endpoint(

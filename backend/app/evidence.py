@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class Evidence(BaseModel):
@@ -25,6 +25,17 @@ class CriterionAssessment(BaseModel):
     counter_evidence: list[Evidence] = Field(
         default_factory=list
     )
+
+    @computed_field
+    @property
+    def evidence_status(self) -> str:
+        if self.evidence and self.counter_evidence:
+            return "conflicting"
+
+        if self.evidence:
+            return "supporting"
+
+        return "insufficient"
 
 
 def calculate_assessment_confidence(

@@ -5,6 +5,7 @@ from app.evidence import Evidence
 
 class ResearchRequest(BaseModel):
     question: str
+    evidence: list[Evidence] = []
 
 
 class ResearchResponse(BaseModel):
@@ -17,5 +18,5 @@ def research(request: ResearchRequest) -> ResearchResponse:
     return ResearchResponse(
         question=request.question,
         status="ready",
-        findings=[],
+        findings=request.evidence,
     )

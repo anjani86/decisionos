@@ -469,33 +469,60 @@ def test_assessments_can_produce_decision():
     assert result.eligibility == "eligible"
     assert result.overall_score == 91
     assert result.recommendation == "recommended"
-    assessments = [
-        CriterionAssessment(
-            criterion_name="Technical Fit",
-            assessment="The supplier strongly meets technical requirements.",
-            score=95,
-            evidence=[],
-        ),
-        CriterionAssessment(
-            criterion_name="Availability",
-            assessment="The supplier has strong availability.",
-            score=85,
-            evidence=[],
-        ),
-    ]
 
-    request = build_decision_request(
-        option_name="Supplier A",
-        assessments=assessments,
-        weights={
-            "Technical Fit": 0.6,
-            "Availability": 0.4,
-        },
+def test_assessment_evidence_status_is_supporting():
+    evidence = Evidence(
+        source_name="STMicroelectronics",
+        source_url="https://www.st.com/",
+        claim="STM32F407VGT6 is an active product",
+        evidence_type="supporting",
+        confidence=0.95,
     )
 
-    result = calculate_decision(request)
+    assessment = CriterionAssessment(
+        criterion_name="Lifecycle",
+        assessment="Product is active",
+        score=95,
+        evidence=[evidence],
+    )
 
-    assert result.option_name == "Supplier A"
-    assert result.eligibility == "eligible"
-    assert result.overall_score == 91
-    assert result.recommendation == "recommended"   
+    assert assessment.evidence_status == "supporting"
+
+
+def test_assessment_evidence_status_is_conflicting():
+    evidence = Evidence(
+        source_name="STMicroelectronics",
+        source_url="https://www.st.com/",
+        claim="STM32F407VGT6 is an active product",
+        evidence_type="supporting",
+        confidence=0.95,
+    )
+
+    counter_evidence = Evidence(
+        source_name="Distributor Documentation",
+        source_url="https://example.com/",
+        claim="Some distributor records indicate limited availability",
+        evidence_type="contradicting",
+        confidence=0.70,
+    )
+
+    assessment = CriterionAssessment(
+        criterion_name="Lifecycle",
+        assessment="Product appears to be active",
+        score=85,
+        evidence=[evidence],
+        counter_evidence=[counter_evidence],
+    )
+
+    assert assessment.evidence_status == "conflicting"
+
+
+def test_assessment_evidence_status_is_insufficient():
+    assessment = CriterionAssessment(
+        criterion_name="Lifecycle",
+        assessment="No evidence available",
+        score=0,
+        evidence=[],
+    )
+
+    assert assessment.evidence_status == "insufficient"
