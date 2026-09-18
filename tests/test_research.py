@@ -3,8 +3,10 @@ from app.evidence import Evidence
 from app.research import (
     ResearchRequest,
     ResearchSource,
+    SourceRetrievalRequest,
     create_evidence_from_source,
     research,
+    retrieve_source,
 )
 
 
@@ -75,3 +77,19 @@ def test_research_source_can_be_normalized_into_evidence():
     assert evidence.claim == "STM32F407VGT6 is an active product"
     assert evidence.evidence_type == "supporting"
     assert evidence.confidence == 0.95
+
+
+def test_retrieve_source_returns_research_source():
+    request = SourceRetrievalRequest(
+        source_name="STMicroelectronics",
+        source_url="https://www.st.com/",
+        source_type="official_product_page",
+        content="STM32F407VGT6 is an active product.",
+    )
+
+    source = retrieve_source(request)
+
+    assert source.source_name == "STMicroelectronics"
+    assert source.source_url == "https://www.st.com/"
+    assert source.source_type == "official_product_page"
+    assert source.content == "STM32F407VGT6 is an active product."

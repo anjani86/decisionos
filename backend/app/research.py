@@ -23,6 +23,23 @@ class ResearchResponse(BaseModel):
     findings: list[Evidence]
 
 
+class SourceRetrievalRequest(BaseModel):
+    source_name: str
+    source_url: str
+    source_type: str
+    content: str
+
+
+def retrieve_source(
+    request: SourceRetrievalRequest,
+) -> ResearchSource:
+    return ResearchSource(
+        source_name=request.source_name,
+        source_url=request.source_url,
+        content=request.content,
+        source_type=request.source_type,
+    )
+
 def research(request: ResearchRequest) -> ResearchResponse:
     return ResearchResponse(
         question=request.question,
@@ -34,11 +51,11 @@ def create_evidence_from_source(
     source: ResearchSource,
     claim: str,
     evidence_type: Literal[
-    "supporting",
-    "contradicting",
-    "neutral",
-    "missing",
-],
+        "supporting",
+        "contradicting",
+        "neutral",
+        "missing",
+    ],
     confidence: float,
 ) -> Evidence:
     return Evidence(
