@@ -50,3 +50,24 @@ def test_source_evidence_endpoint_rejects_invalid_evidence_type():
     )
 
     assert response.status_code == 422
+
+
+def test_source_retrieve_endpoint_returns_research_source():
+    response = client.post(
+        "/source/retrieve",
+        json={
+            "source_name": "STMicroelectronics",
+            "source_url": "https://www.st.com/",
+            "source_type": "official_product_page",
+            "content": "STM32F407VGT6 is an active product.",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["source_name"] == "STMicroelectronics"
+    assert data["source_url"] == "https://www.st.com/"
+    assert data["source_type"] == "official_product_page"
+    assert data["content"] == "STM32F407VGT6 is an active product."

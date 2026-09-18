@@ -19,8 +19,10 @@ from app.research import (
     ResearchRequest,
     ResearchResponse,
     ResearchSource,
+    SourceRetrievalRequest,
     create_evidence_from_source,
     research,
+    retrieve_source,
 )
 
 
@@ -46,6 +48,10 @@ class SourceEvidenceRequest(BaseModel):
         "missing",
     ]
     confidence: float
+
+@app.post("/source/retrieve", response_model=ResearchSource)
+def source_retrieve_endpoint(request: SourceRetrievalRequest):
+    return retrieve_source(request)
 
 
 @app.post("/source/evidence", response_model=Evidence)
