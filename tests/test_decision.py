@@ -526,3 +526,84 @@ def test_assessment_evidence_status_is_insufficient():
     )
 
     assert assessment.evidence_status == "insufficient"
+
+
+
+def test_assessment_builds_decision_request_and_preserves_score():
+    assessment = CriterionAssessment(
+        criterion_name="Technical Fit",
+        assessment="Strong technical match",
+        score=90.0,
+        confidence=0.95,
+        evidence=[
+            Evidence(
+                source_name="STMicroelectronics",
+                source_url="https://www.st.com/",
+                claim="STM32F407VGT6 is an active product",
+                evidence_type="supporting",
+                confidence=0.95,
+            )
+        ],
+    )
+
+    request = build_decision_request(
+        option_name="Supplier A",
+        assessments=[assessment],
+        weights={"Technical Fit": 1.0},
+    )
+
+    assert len(request.criteria) == 1
+    assert request.criteria[0].name == "Technical Fit"
+    assert request.criteria[0].score == 90.0
+    assert request.criteria[0].weight == 1.0
+
+
+def test_assessment_pipeline_produces_decision():
+    assessments = [
+        CriterionAssessment(
+            criterion_name="Technical Fit",
+            assessment="Strong technical match",
+            score=90.0,
+            confidence=0.95,
+            evidence=[
+                Evidence(
+                    source_name="STMicroelectronics",
+                    source_url="https://www.st.com/",
+                    claim="STM32F407VGT6 is an active product",
+                    evidence_type="supporting",
+                    confidence=0.95,
+                )
+            ],
+        ),
+        CriterionAssessment(
+            criterion_name="Availability",
+            assessment="Good availability",
+            score=80.0,
+            confidence=0.90,
+            evidence=[
+                Evidence(
+                    source_name="Supplier A",
+                    source_url="https://example.com/supplier-a",
+                    claim="Product is available",
+                    evidence_type="supporting",
+                    confidence=0.90,
+                )
+            ],
+        ),
+    ]
+
+    request = build_decision_request(
+        option_name="Supplier A",
+        assessments=assessments,
+        weights={
+            "Technical Fit": 0.6,
+            "Availability": 0.4,
+        },
+    )
+
+    result = calculate_decision(request)
+
+    assert result.option_name == "Supplier A"
+    assert result.eligibility == "eligible"
+    assert result.overall_score == 86.0
+    assert result.recommendation == "recommended"    
