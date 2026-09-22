@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -53,15 +55,22 @@ def test_source_evidence_endpoint_rejects_invalid_evidence_type():
 
 
 def test_source_retrieve_endpoint_returns_research_source():
-    response = client.post(
-        "/source/retrieve",
-        json={
+    with patch("app.main.retrieve_url") as mock_retrieve:
+        mock_retrieve.return_value = {
             "source_name": "STMicroelectronics",
             "source_url": "https://www.st.com/",
             "source_type": "official_product_page",
             "content": "STM32F407VGT6 is an active product.",
-        },
-    )
+        }
+
+        response = client.post(
+            "/source/retrieve",
+            json={
+                "source_name": "STMicroelectronics",
+                "source_url": "https://www.st.com/",
+                "source_type": "official_product_page",
+            },
+        )
 
     assert response.status_code == 200
 

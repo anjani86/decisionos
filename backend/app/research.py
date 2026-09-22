@@ -23,23 +23,10 @@ class ResearchResponse(BaseModel):
     findings: list[Evidence]
 
 
-class SourceRetrievalRequest(BaseModel):
+class URLRetrievalRequest(BaseModel):
     source_name: str
     source_url: str
     source_type: str
-    content: str
-
-
-def retrieve_source(
-    request: SourceRetrievalRequest,
-) -> ResearchSource:
-    return ResearchSource(
-        source_name=request.source_name,
-        source_url=request.source_url,
-        content=request.content,
-        source_type=request.source_type,
-    )
-
 
 def retrieve_url(
     source_name: str,

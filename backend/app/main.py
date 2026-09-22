@@ -19,10 +19,10 @@ from app.research import (
     ResearchRequest,
     ResearchResponse,
     ResearchSource,
-    SourceRetrievalRequest,
+    URLRetrievalRequest,
     create_evidence_from_source,
     research,
-    retrieve_source,
+    retrieve_url,
 )
 
 
@@ -50,9 +50,12 @@ class SourceEvidenceRequest(BaseModel):
     confidence: float
 
 @app.post("/source/retrieve", response_model=ResearchSource)
-def source_retrieve_endpoint(request: SourceRetrievalRequest):
-    return retrieve_source(request)
-
+def source_retrieve_endpoint(request: URLRetrievalRequest):
+    return retrieve_url(
+        source_name=request.source_name,
+        source_url=request.source_url,
+        source_type=request.source_type,
+    )
 
 @app.post("/source/evidence", response_model=Evidence)
 def source_evidence_endpoint(request: SourceEvidenceRequest):

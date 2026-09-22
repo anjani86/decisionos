@@ -3,10 +3,9 @@ from app.evidence import Evidence
 from app.research import (
     ResearchRequest,
     ResearchSource,
-    SourceRetrievalRequest,
+    URLRetrievalRequest,
     create_evidence_from_source,
     research,
-    retrieve_source,
     retrieve_url,
 )
 from unittest.mock import patch
@@ -80,21 +79,6 @@ def test_research_source_can_be_normalized_into_evidence():
     assert evidence.confidence == 0.95
 
 
-def test_retrieve_source_returns_research_source():
-    request = SourceRetrievalRequest(
-        source_name="STMicroelectronics",
-        source_url="https://www.st.com/",
-        source_type="official_product_page",
-        content="STM32F407VGT6 is an active product.",
-    )
-
-    source = retrieve_source(request)
-
-    assert source.source_name == "STMicroelectronics"
-    assert source.source_url == "https://www.st.com/"
-    assert source.source_type == "official_product_page"
-    assert source.content == "STM32F407VGT6 is an active product."
-
 def test_retrieve_url_returns_research_source():
     mock_response = type(
         "MockResponse",
@@ -116,4 +100,15 @@ def test_retrieve_url_returns_research_source():
     assert source.source_name == "STMicroelectronics"
     assert source.source_url == "https://www.st.com/"
     assert source.source_type == "official_product_page"
-    assert source.content == "STM32F407VGT6 is an active product." 
+    assert source.content == "STM32F407VGT6 is an active product."
+
+def test_url_retrieval_request_captures_source_metadata():
+    request = URLRetrievalRequest(
+        source_name="STMicroelectronics",
+        source_url="https://www.st.com/",
+        source_type="official_product_page",
+    )
+
+    assert request.source_name == "STMicroelectronics"
+    assert request.source_url == "https://www.st.com/"
+    assert request.source_type == "official_product_page"
