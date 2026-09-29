@@ -1,202 +1,635 @@
 # DecisionOS
 
-> **Evidence-backed AI decision intelligence for supplier selection and procurement.**
+> Evidence-backed AI decision intelligence for procurement and supplier selection.
 
-DecisionOS is an early-stage AI product exploring how procurement teams can make faster, more transparent, and more defensible supplier-selection decisions when relevant information is fragmented across financial data, company information, certifications, market signals, news, and other sources.
+DecisionOS is a portfolio project exploring how AI can help procurement teams make **transparent, evidence-backed, and defensible supplier decisions**.
 
-## The Problem
+The system combines evidence, criterion assessments, hard constraints, deterministic scoring, comparison, sensitivity analysis, and stability analysis into a structured decision workflow.
 
-Supplier selection is a multi-dimensional decision.
+The core principle is:
 
-Procurement teams may need to evaluate:
+> **AI recommends. Humans decide.**
 
-* Cost
+---
+
+## Problem
+
+Supplier selection involves multiple competing factors:
+
 * Technical fit
-* Quality and certifications
-* Delivery reliability
-* Capacity
-* Financial stability
-* Geographic and geopolitical risk
+* Availability
+* Lead time
+* Price
+* Product lifecycle
+* Supply risk
+* Geographic risk
 * Compliance
-* Supplier concentration
-* Strategic fit
 
 The challenge is not simply finding information.
 
-The challenge is turning fragmented and sometimes contradictory information into a decision that a procurement professional can understand, challenge, and defend.
+The challenge is turning that information into a decision that can answer:
 
-## The Product
+> **Why is this supplier recommended, what evidence supports the recommendation, what evidence challenges it, and how sensitive is the decision to changing assumptions?**
 
-DecisionOS aims to answer:
+DecisionOS explores a structured approach to this problem.
 
-> **Which supplier should we choose, why, what could make that recommendation wrong, and what should we do next?**
-
-The system will combine:
-
-**Research → Evidence → Evaluation → Risk → Recommendation → Human decision**
-
-Rather than producing a generic AI-generated answer, DecisionOS is designed around traceable evidence and explicit decision criteria.
+---
 
 ## Initial Use Case
 
 ### Electronic Component Supplier Selection
 
-A procurement professional needs to select a supplier for a strategically important purchase.
+The first use case is procurement of electronic components.
 
-Example requirements:
+A procurement team may need to compare suppliers while enforcing requirements such as:
 
-* Minimum annual capacity
-* Maximum acceptable lead time
-* Required certifications
-* Target price
-* Technical specifications
-* Geographic constraints
-* Quality requirements
+* Maximum lead time
+* Maximum price
+* RoHS compliance
+* Required lifecycle status
 
-DecisionOS will evaluate candidate suppliers against these requirements and produce an evidence-backed recommendation.
+At the same time, suppliers can be evaluated using weighted criteria such as:
 
-## Core Features
+* Technical fit
+* Availability
+* Lead time
+* Price
+* Lifecycle
+* Supply risk
+* Geographic risk
 
-### 1. Evidence-backed supplier comparison
+DecisionOS separates **hard constraints** from **weighted criteria**.
 
-Compare suppliers across configurable criteria and show the evidence behind each assessment.
+A supplier that violates a mandatory requirement should not be rescued simply because it has a high overall score.
 
-### 2. Hard constraints
+---
 
-Separate non-negotiable requirements from weighted preferences.
-
-### 3. Supplier scoring
-
-Calculate transparent, deterministic scores based on the decision criteria.
-
-### 4. Risk analysis
-
-Identify financial, operational, geographic, compliance, and supply-chain risks.
-
-### 5. Counter-evidence
-
-Actively search for evidence that could challenge the initial recommendation.
-
-### 6. Recommendation stability
-
-Test how changes in assumptions, weights, price, lead time, or risk affect the final recommendation.
-
-### 7. Recommended next action
-
-Translate the analysis into a practical procurement action.
-
-## Product Principle
-
-> **AI recommends. Humans decide.**
-
-DecisionOS is intended to support procurement professionals rather than autonomously award suppliers or make irreversible procurement decisions.
-
-## Current Status
-
-**Phase 1 — Product Discovery**
-
-| Area                 | Status         |
-| -------------------- | -------------- |
-| Product hypothesis   | 🟢 Defined     |
-| Initial user         | 🟢 Defined     |
-| Initial use case     | 🟢 Defined     |
-| Market research      | 🟡 In progress |
-| Data strategy        | ⚪ Not started  |
-| Architecture         | ⚪ Not started  |
-| MVP                  | ⚪ Not started  |
-| Evaluation framework | ⚪ Not started  |
-| Deployment           | ⚪ Not started  |
-
-## Planned Architecture
+## Decision Flow
 
 ```text
-                    BUSINESS REQUIREMENT
-                             │
-                             ▼
-                       DECISION SETUP
-                             │
-                             ▼
-                    RESEARCH & RETRIEVAL
-                             │
-              ┌──────────────┼──────────────┐
-              ▼              ▼              ▼
-          Company          Market          Risk
-           Data             Data           Data
-              │              │              │
-              └──────────────┼──────────────┘
-                             ▼
-                       EVIDENCE LAYER
-                             │
-                    ┌────────┴────────┐
-                    ▼                 ▼
-               Supporting       Contradicting
-                Evidence          Evidence
-                    │                 │
-                    └────────┬────────┘
-                             ▼
-                     DECISION ENGINE
-                             │
-                             ▼
-                     RECOMMENDATION
-                             │
-                  ┌──────────┴──────────┐
-                  ▼                     ▼
-             Why this?          What could change it?
-                  │                     │
-                  └──────────┬──────────┘
-                             ▼
-                       HUMAN DECISION
+Requirements
+     |
+     v
+Evidence
+     |
+     v
+Criterion Assessment
+     |
+     +------------------+
+     |                  |
+     v                  v
+Supporting         Counter-Evidence
+Evidence
+     |                  |
+     +--------+---------+
+              |
+              v
+       Hard Constraints
+              |
+              v
+       Decision Engine
+              |
+       +------+------+
+       |             |
+       v             v
+     Score          Risk
+       |             |
+       +------+------+
+              |
+              v
+   Sensitivity / Stability
+              |
+              v
+       Recommendation
+              |
+              v
+        Human Decision
 ```
 
-## Evaluation
+---
 
-A major goal of this project is to evaluate the AI system rather than simply demonstrate that an LLM can generate an answer.
+# Core Capabilities
 
-Planned evaluation areas include:
+## Evidence Model
+
+Evidence is represented explicitly rather than treating an AI response as the evidence itself.
+
+Each evidence item contains:
+
+* Source name
+* Source URL
+* Claim
+* Evidence type
+* Confidence
+
+Supported evidence types:
+
+* `supporting`
+* `contradicting`
+* `neutral`
+* `missing`
+
+---
+
+## Criterion Assessment
+
+Evidence can be organized into criterion-level assessments.
+
+Each assessment contains:
+
+* Criterion
+* Assessment
+* Score
+* Confidence
+* Supporting evidence
+* Counter-evidence
+
+The system also identifies whether evidence is:
+
+* Supporting
+* Conflicting
+* Insufficient
+
+---
+
+## Hard Constraints
+
+DecisionOS distinguishes mandatory requirements from weighted decision criteria.
+
+Example:
+
+```text
+Maximum lead time: 12 weeks
+Maximum price:     $15
+RoHS required:     Yes
+Lifecycle:         Active
+```
+
+If a supplier violates a hard constraint, the option can become ineligible regardless of its weighted score.
+
+Example:
+
+```text
+Supplier B
+
+Lead time: 16 weeks
+Maximum allowed: 12 weeks
+
+Result: INELIGIBLE
+```
+
+---
+
+## Deterministic Decision Engine
+
+The current decision engine uses explicit weighted criteria.
+
+Default weights:
+
+| Criterion       | Weight |
+| --------------- | -----: |
+| Technical Fit   |   0.25 |
+| Availability    |   0.20 |
+| Lead Time       |   0.15 |
+| Price           |   0.15 |
+| Lifecycle       |   0.10 |
+| Supply Risk     |   0.10 |
+| Geographic Risk |   0.05 |
+
+Weighted contribution is calculated as:
+
+```text
+criterion score × criterion weight
+```
+
+Current recommendation thresholds:
+
+```text
+80+  → recommended
+60–79.99 → acceptable
+<60  → not_recommended
+```
+
+Hard constraint failures are handled separately from the weighted score.
+
+---
+
+## Supplier Comparison
+
+Multiple supplier options can be evaluated using the same criteria.
+
+The comparison capability helps expose:
+
+* Overall score differences
+* Criterion-level differences
+* Constraint failures
+* Trade-offs between suppliers
+
+---
+
+## Counter-Evidence
+
+DecisionOS explicitly supports evidence that challenges an assessment.
+
+Example:
+
+```text
+Supporting evidence:
+Product is listed as active.
+
+Counter-evidence:
+Other information indicates potential supply constraints.
+```
+
+The purpose is to make conflicting information visible instead of hiding it behind a single conclusion.
+
+---
+
+## Sensitivity Analysis
+
+DecisionOS can examine how the recommendation changes when decision inputs change.
+
+This helps answer:
+
+> How dependent is the recommendation on the current assumptions?
+
+---
+
+## Stability Analysis
+
+DecisionOS can also examine how recommendation status changes as the decision score changes.
+
+For example:
+
+```text
+92 → recommended
+87 → recommended
+82 → recommended
+77 → acceptable
+```
+
+This helps identify recommendations that are close to a decision boundary.
+
+---
+
+# API
+
+DecisionOS currently provides a FastAPI backend.
+
+| Method | Endpoint           | Purpose                     |
+| ------ | ------------------ | --------------------------- |
+| GET    | `/health`          | Health check                |
+| POST   | `/research`        | Research workflow           |
+| POST   | `/evidence`        | Evidence processing         |
+| POST   | `/assessment`      | Criterion assessment        |
+| POST   | `/decision`        | Decision evaluation         |
+| POST   | `/comparison`      | Supplier comparison         |
+| POST   | `/sensitivity`     | Sensitivity analysis        |
+| POST   | `/stability`       | Stability analysis          |
+| POST   | `/source/retrieve` | Source retrieval contract   |
+| POST   | `/source/evidence` | Source-to-evidence workflow |
+
+Swagger documentation is available at:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+---
+
+# Example Decision
+
+A simplified decision can evaluate a supplier using weighted criteria and hard constraints.
+
+```json
+{
+  "option_name": "STM32F407VGT6 - Supplier A",
+  "criteria": [
+    {
+      "name": "Technical Fit",
+      "weight": 0.25,
+      "score": 90
+    },
+    {
+      "name": "Availability",
+      "weight": 0.20,
+      "score": 90
+    },
+    {
+      "name": "Lead Time",
+      "weight": 0.15,
+      "score": 95
+    },
+    {
+      "name": "Price",
+      "weight": 0.15,
+      "score": 85
+    },
+    {
+      "name": "Lifecycle",
+      "weight": 0.10,
+      "score": 95
+    },
+    {
+      "name": "Supply Risk",
+      "weight": 0.10,
+      "score": 90
+    },
+    {
+      "name": "Geographic Risk",
+      "weight": 0.05,
+      "score": 90
+    }
+  ],
+  "lead_time_weeks": 8,
+  "price": 10,
+  "rohs_compliant": true,
+  "lifecycle_status": "active"
+}
+```
+
+---
+
+# Technology
+
+* Python 3.12
+* FastAPI
+* Pydantic
+* Pytest
+* REST API
+* OpenAPI / Swagger
+* Deterministic Python decision logic
+
+The decision layer is intentionally deterministic and testable.
+
+---
+
+# Project Structure
+
+```text
+decisionos/
+│
+├── backend/
+│   └── app/
+│       ├── main.py
+│       ├── decision.py
+│       ├── evidence.py
+│       └── research.py
+│
+├── docs/
+│   ├── 01-product-discovery.md
+│   ├── 02-market-research.md
+│   ├── 03-data-strategy.md
+│   ├── 04-product-requirements.md
+│   └── 05-system-architecture.md
+│
+├── tests/
+│   └── ...
+│
+└── README.md
+```
+
+---
+
+# Documentation
+
+The `/docs` directory contains the product and technical thinking behind DecisionOS:
+
+* Product discovery
+* Market research
+* Data strategy
+* Product requirements
+* System architecture
+
+The project is intended to demonstrate both **product thinking and engineering execution**.
+
+---
+
+# Run Locally
+
+Activate the virtual environment:
+
+```bash
+source .venv/bin/activate
+```
+
+Run the tests:
+
+```bash
+PYTHONPATH=backend pytest -q
+```
+
+Start the API:
+
+```bash
+PYTHONPATH=backend uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Health check:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+Expected response:
+
+```json
+{
+  "status": "ok",
+  "service": "decisionos-api",
+  "version": "0.1.0"
+}
+```
+
+---
+
+# Testing
+
+The test suite covers:
+
+* Decision scoring
+* Weighted criteria
+* Hard constraints
+* Evidence models
+* Counter-evidence
+* Criterion assessments
+* Assessment-to-decision transformation
+* Supplier comparison
+* Sensitivity analysis
+* Stability analysis
+* API behavior
+* Source retrieval contracts
+
+Current test status:
+
+```text
+30 passed
+1 warning
+```
+
+The warning is from a dependency deprecation and does not represent a failing test.
+
+---
+
+# Current Status
+
+| Capability                          | Status      |
+| ----------------------------------- | ----------- |
+| Product hypothesis                  | Implemented |
+| Procurement use case                | Defined     |
+| Product discovery                   | Documented  |
+| Market research                     | Documented  |
+| Data strategy                       | Documented  |
+| Product requirements                | Documented  |
+| System architecture                 | Documented  |
+| Evidence model                      | Implemented |
+| Criterion assessments               | Implemented |
+| Hard constraints                    | Implemented |
+| Decision engine                     | Implemented |
+| Supplier comparison                 | Implemented |
+| Sensitivity analysis                | Implemented |
+| Stability analysis                  | Implemented |
+| Automated tests                     | Implemented |
+| FastAPI API                         | Implemented |
+| Source retrieval contract           | Implemented |
+| Production-grade external retrieval | In progress |
+| Web application                     | Future      |
+| Evaluation benchmark                | Future      |
+| Deployment                          | Future      |
+
+---
+
+# Current Limitation
+
+The source retrieval capability currently provides the retrieval contract and implementation, but external websites may not always be reliably accessible from a local Python HTTP client.
+
+This can happen because of:
+
+* Redirect behavior
+* Bot protection
+* Network restrictions
+* Website-specific security policies
+
+The core DecisionOS decision engine does not depend on successful live retrieval from a particular external website.
+
+The retrieval layer is therefore being treated as an integration area that will be hardened separately.
+
+---
+
+# Evaluation
+
+Future evaluation will measure the quality of the decision-intelligence pipeline.
+
+Planned dimensions include:
 
 * Evidence retrieval accuracy
-* Citation correctness
 * Claim-to-source accuracy
+* Citation correctness
 * Contradiction detection
-* Supplier scoring consistency
+* Assessment consistency
+* Decision consistency
 * Recommendation stability
 * Hallucination rate
 * Latency
-* Cost per decision
+* Cost
 
-## Project Roadmap
+---
 
-* [x] Product hypothesis
-* [x] Initial user definition
-* [x] Initial procurement use case
-* [ ] Market and competitor validation
-* [ ] Exact category validation
-* [ ] Supplier data strategy
-* [ ] Data model
-* [ ] Product requirements
-* [ ] System architecture
-* [ ] Research engine
-* [ ] Evidence layer
-* [ ] Decision engine
-* [ ] Counter-evidence engine
-* [ ] Sensitivity analysis
-* [ ] Web application
-* [ ] Evaluation benchmark
-* [ ] Deployment
-* [ ] Product case study
+# Roadmap
 
-## Why This Project?
+## Completed
 
-The goal is to explore a broader question:
+* Product hypothesis
+* Initial procurement use case
+* Product discovery
+* Market research
+* Data strategy
+* Product requirements
+* System architecture
+* Evidence model
+* Criterion assessment model
+* Hard constraints
+* Decision engine
+* Supplier comparison
+* Sensitivity analysis
+* Stability analysis
+* Automated tests
+* FastAPI backend
+
+## In Progress
+
+* End-to-end procurement demonstration
+* Source retrieval hardening
+* Evaluation benchmark
+* Evidence retrieval pipeline
+
+## Future
+
+* Web application
+* LLM-assisted research
+* Automated contradiction detection
+* Supplier data integrations
+* Production deployment
+* Evaluation dashboard
+
+---
+
+# Product Principle
+
+> **AI recommends. Humans decide.**
+
+DecisionOS is designed to make the evidence, assumptions, constraints, trade-offs, and uncertainty behind a decision easier to inspect.
+
+The goal is not to replace procurement judgment.
+
+The goal is to support better-informed human decisions.
+
+---
+
+# Why This Project?
+
+DecisionOS explores a broader product question:
 
 > **How can AI help people make better decisions when information is fragmented, uncertain, and contradictory?**
 
-Procurement is the initial domain. The underlying decision-intelligence architecture could eventually be applied to other complex business decisions.
+Procurement is the initial domain because supplier selection combines:
 
-## Disclaimer
+* Structured criteria
+* External evidence
+* Hard constraints
+* Uncertainty
+* Trade-offs
+* Business consequences
 
-DecisionOS is an independent portfolio project and research prototype. It is not intended to provide professional procurement, financial, legal, compliance, or supply-chain advice.
+The same decision-intelligence principles can potentially be applied to other complex business decisions where evidence and explainability matter.
 
-## License
+---
+
+# Portfolio Context
+
+DecisionOS is an independent portfolio project combining:
+
+* Product discovery
+* AI product design
+* Backend engineering
+* Decision-system design
+* Evidence modeling
+* API development
+* Automated testing
+* System architecture
+
+The project is intentionally built as a practical implementation rather than a conceptual AI demo.
+
+---
+
+# Disclaimer
+
+DecisionOS is an independent portfolio project and research prototype.
+
+It is not intended to provide professional procurement, financial, legal, compliance, or supply-chain advice.
+
+---
+
+# License
 
 MIT
