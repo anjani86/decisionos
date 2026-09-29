@@ -443,6 +443,25 @@ Expected response:
 
 ---
 
+# Demo
+
+Run the complete supplier decision workflow:
+
+```bash
+./scripts/demo.sh
+```
+
+The demo validates:
+
+1. API health
+2. Eligible supplier decision
+3. Hard-constraint rejection
+4. Multi-supplier comparison
+
+The demo uses the same DecisionOS API endpoints described above and is fully reproducible locally.
+
+---
+
 # Testing
 
 The test suite covers:
