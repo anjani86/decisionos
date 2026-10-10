@@ -112,3 +112,94 @@ def test_url_retrieval_request_captures_source_metadata():
     assert request.source_name == "STMicroelectronics"
     assert request.source_url == "https://www.st.com/"
     assert request.source_type == "official_product_page"
+
+
+def test_retrieve_url_handles_timeout():
+    from fastapi import HTTPException
+
+    with patch(
+        "app.research.urlopen",
+        side_effect=TimeoutError("request timed out"),
+    ):
+        try:
+            retrieve_url(
+                source_name="Example",
+                source_url="https://example.com/",
+                source_type="official",
+            )
+            assert False, "Expected HTTPException"
+        except HTTPException as exc:
+            assert exc.status_code == 504
+            assert "https://example.com/" in exc.detail
+
+
+def test_retrieve_url_handles_connection_failure():
+    from fastapi import HTTPException
+    from urllib.error import URLError
+
+    with patch(
+        "app.research.urlopen",
+        side_effect=URLError("connection refused"),
+    ):
+        try:
+            retrieve_url(
+                source_name="Example",
+                source_url="https://example.com/",
+                source_type="official",
+            )
+            assert False, "Expected HTTPException"
+        except HTTPException as exc:
+            assert exc.status_code == 504
+            assert "https://example.com/" in exc.detail
+
+
+def test_retrieve_url_handles_http_error():
+    from email.message import Message
+    from fastapi import HTTPException
+    from urllib.error import HTTPError
+
+    error = HTTPError(
+        "https://example.com/",
+        404,
+        "Not Found",
+        Message(),
+        None,
+    )
+
+    with patch("app.research.urlopen", side_effect=error):
+        try:
+            retrieve_url(
+                source_name="Example",
+                source_url="https://example.com/",
+                source_type="official",
+            )
+            assert False, "Expected HTTPException"
+        except HTTPException as exc:
+            assert exc.status_code == 502
+            assert "HTTP 404" in exc.detail
+
+
+def test_retrieve_url_rejects_redirect_without_location():
+    from email.message import Message
+    from fastapi import HTTPException
+    from urllib.error import HTTPError
+
+    error = HTTPError(
+        "https://example.com/",
+        302,
+        "Found",
+        Message(),
+        None,
+    )
+
+    with patch("app.research.urlopen", side_effect=error):
+        try:
+            retrieve_url(
+                source_name="Example",
+                source_url="https://example.com/",
+                source_type="official",
+            )
+            assert False, "Expected HTTPException"
+        except HTTPException as exc:
+            assert exc.status_code == 502
+            assert "without a location" in exc.detail

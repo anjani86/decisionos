@@ -80,3 +80,27 @@ def test_source_retrieve_endpoint_returns_research_source():
     assert data["source_url"] == "https://www.st.com/"
     assert data["source_type"] == "official_product_page"
     assert data["content"] == "STM32F407VGT6 is an active product."
+
+def test_source_retrieve_endpoint_returns_gateway_timeout():
+    from fastapi import HTTPException
+
+    with patch(
+        "app.main.retrieve_url",
+        side_effect=HTTPException(
+            status_code=504,
+            detail="Source retrieval timed out or failed: https://example.com/",
+        ),
+    ):
+        response = client.post(
+            "/source/retrieve",
+            json={
+                "source_name": "Example",
+                "source_url": "https://example.com/",
+                "source_type": "official",
+            },
+        )
+
+    assert response.status_code == 504
+    assert response.json()["detail"] == (
+        "Source retrieval timed out or failed: https://example.com/"
+    )
