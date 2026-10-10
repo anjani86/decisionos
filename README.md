@@ -10,6 +10,8 @@ The core principle is:
 
 > **AI recommends. Humans decide.**
 
+**Portfolio case study:** [Read the DecisionOS case study](docs/content/decisionos-case-study.md) — product problem, decision logic, implementation, validation, limitations, and next steps.
+
 ---
 
 ## Problem
